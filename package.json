@@ -1,30 +1,38 @@
 {
   "name": "module-monitor",
-  "version": "1.0.1",
-  "description": "Modul-Monitor facilitates automatic reloading of modules in Node.js applications, ensuring real-time updates during development.",
-  "main": "index.js",
+  "version": "1.0.2",
   "type": "module",
-  "files": [
-    "watcher/*.js",
-    "utils/*.js"
-  ],
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/XanderID/Module-Monitor.git"
-  },
+  "description": "Modul-Monitor facilitates automatic reloading of modules in Node.js applications, ensuring real-time updates during development.",
   "keywords": [
     "module-loader",
     "file-watcher",
     "monitor",
     "development-tools"
   ],
-  "author": "XanderID",
-  "license": "MIT",
+  "homepage": "https://github.com/XanderID/Module-Monitor#readme",
   "bugs": {
     "url": "https://github.com/XanderID/Module-Monitor/issues"
   },
-  "homepage": "https://github.com/XanderID/Module-Monitor#readme"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XanderID/Module-Monitor.git"
+  },
+  "license": "MIT",
+  "author": "XanderID",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc && node dev/fix-import.js"
+  },
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.16.18",
+    "typescript": "^4.9.5"
+  }
 }

@@ -1,143 +1,98 @@
-<br />
-<div align="center">
-  <a href="https://github.com/XanderID/Module-Monitor">
+# Module-Monitor
 
-  <h3 align="center">Module-Monitor</h3>
-
-  <p align="center">
-    Modul-Monitor facilitates automatic reloading of modules in Node.js applications, ensuring real-time updates during development.
-    <br />
-    <br />
-    <a href="https://github.com/XanderID/Module-Monitor/issues/new?labels=bug">Report Bug</a>
-    ·
-    <a href="https://github.com/XanderID/Module-Monitor/issues/new?labels=enhancement">Request Feature</a>
-  </p>
-</div>
-
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#callback-events">Callback Events</a></li>
-      </ul>
-    </li>
-    <li><a href="#warning">Warning</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-  </ol>
-</details>
+Module-Monitor facilitates automatic reloading of modules in Node.js applications, ensuring real-time updates during development.
 
 ## About The Project
 
 Modul-Monitor is a lightweight utility for Node.js applications that enables automatic reloading of modules when they are modified. It provides a seamless development experience by monitoring specified directories for file changes and refreshing the modules accordingly, ensuring that the latest code changes are always reflected during development.
 
-## Getting Started
+## Features
 
-First of all you have to Include this Module into your Project, here's how to Include Module-Monitor.
+- **WatchFile**: Monitor a single module file for changes, reload dynamically, and handle cleanup.
+- **WatchFolder**: Monitor an entire directory for module additions, changes, and deletions.
+- **Cache Management**: Automatic cache-busting and cleanup via query parameters and cleanupModule support.
+- **TypeScript Support**: Written entirely in TypeScript with typings included.
 
-With CommonJS:
+## Installation
+
+```bash
+npm install module-monitor
+```
+
+## Usage
+
+### CommonJS
 
 ```js
 const { WatchFile, WatchFolder } = require("module-monitor");
 ```
 
-With ES6:
+### ES6
 
-```js
+```ts
 import { WatchFile, WatchFolder } from "module-monitor";
 ```
 
-Then you can use it as an example below:
+### WatchFile Example
+
+`config.js`
 
 ```js
-// Check that config.js has been changed or not using WatchFile
-let config = new WatchFile("./config.js");
+function getConfig(){
+    return { name: 'XanderID' };
+}
 
-// Then you can also use the Callback Event as an example:
-config.setOnReload((module, err) => {
-  if (err) {
-    console.error("Failed to reload:", err);
-  } else {
-    let getConfig = module.getConfig();
-    console.log(`Module Reloaded: ${getConfig}`);
-  }
+export default { getConfig }
+```
+
+`index.js`
+
+```ts
+import { WatchFile } from "module-monitor";
+
+const watcher = new WatchFile("./config.js");
+
+watcher.setOnChange(path => {
+  console.log(`File changed: ${path}`);
 });
 
-// Monitor Folder using WatchFolder if there is Module Addition or Module Deletion
-let commands = {}; // A new module will be in this collection
-let commandsWatch = new WatchFolder("./commands", commands);
+watcher.setOnReload((mod, err) => {
+  if (err) console.error("Reload failed:", err);
+  else console.log("Config reloaded:", mod.default.getConfig());
+});
 
-// then you can use the Callback Event
-commandsWatch.setOnAdd((filePath) => {
-  console.log(`New Module in: ${filePath}`);
+watcher.setOnDelete(path => {
+  console.log(`File deleted: ${path}`);
 });
 ```
 
-## Callback Events
+### WatchFolder Example
 
-In Module-Monitor there are a total of 4 Callback Events but 1 specifically for WatchFolder only.
+```ts
+import { WatchFolder } from "module-monitor";
 
-and these are the Callback Events available on the Module-Monitor:
+const commands = new WatchFolder("./commands");
 
-### Reload Module Event
-
-This event works if you want to check if the Module that was changed or added was successfully loaded or not.
-
-```js
-watcher.setOnReload((module, err) => {
-  // module: is the Module that was just loaded and Imported
-  // err: Err only exists when the Module cannot be loaded
-});
-```
-
-### Module Change Event
-
-This event works when there is a change in the Module being monitored.
-
-```js
-watcher.setOnChange((filePath) => {
-  // filePath: the location of the changed file in the Module
-});
-```
-
-### Deleted Module Event
-
-this event works only when the Module is deleted
-
-```js
-watcher.setOnDelete((filePath) => {
-  // filePath: the location of the deleted file in the Module
-});
-```
-
-### Add Module Event
-
-This event only works when a new Module is added and only works on `WatchFolder`.
-
-```js
-watcher.setOnAdd((filePath) => {
-  // filePath: the location of the new file in the Module
+commands.setOnAdd(path => console.log(`Module added: ${path}`));
+commands.setOnChange(path => console.log(`Module updated: ${path}`));
+commands.setOnDelete(path => console.log(`Module removed: ${path}`));
+commands.setOnReload((mod, err) => {
+  if (err) console.error("Reload error:", err);
+  else console.log(`Module loaded:`, mod);
 });
 ```
 
 ## Warning
 
-if you use setInterval or whatever on the Module you want to monitor, please use `cleanupModule`.
+If your modules perform ongoing tasks (e.g., `setInterval`), implement and export a `cleanupModule` function to prevent duplicate operations on reload.
 
-Usage Example:
+**Usage Example** (e.g., `message.js`):
 
 ```js
-// This is on the module that you want to Handle if there is a task or whatever it is, for example in message.js
-
 let messages = [];
 let counter = 1;
-let interval = setInterval(function () {
-  messages.push(`This is the message of ${counter}`);
+const interval = setInterval(() => {
+  messages.push(`This is message #${counter}`);
   counter++;
 }, 1000);
 
@@ -146,15 +101,29 @@ export async function cleanupModule() {
 }
 ```
 
-So there will be no double intervals or spam.
+This ensures old intervals are cleared before reloading, avoiding duplicate timers or resource leaks.
+
+## API
+
+- `WatchFile<T>`
+  - `constructor(filePath: string)`
+  - `setOnChange(cb: (path: string) => void)`
+  - `setOnReload(cb: (mod: T | null, err?: Error) => void)`
+  - `setOnDelete(cb: (path: string) => void)`
+  - `cleanup(): Promise<void>`
+
+- `WatchFolder<T>`
+  - `constructor(folderPath: string)`
+  - `setOnAdd(cb: (path: string) => void)`
+  - `setOnChange(cb: (path: string) => void)`
+  - `setOnDelete(cb: (path: string) => void)`
+  - `setOnReload(cb: (mod: T | null, err?: Error) => void)`
+  - `cleanup(): Promise<void>`
 
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag _enhancement_.
-Don't forget to give the project a star! Thanks again!
+Contributions are welcome! Please open issues and pull requests on GitHub.
 
 ## License
 
-Distributed under the MIT. See `LICENSE` for more information.
+Distributed under the MIT License.
