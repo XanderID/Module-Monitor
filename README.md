@@ -56,7 +56,7 @@ watcher.setOnChange(path => {
   console.log(`File changed: ${path}`);
 });
 
-watcher.setOnReload((mod, err) => {
+watcher.setOnReload((mod, file, err) => {
   if (err) console.error("Reload failed:", err);
   else console.log("Config reloaded:", mod.default.getConfig());
 });
@@ -76,7 +76,7 @@ const commands = new WatchFolder("./commands");
 commands.setOnAdd(path => console.log(`Module added: ${path}`));
 commands.setOnChange(path => console.log(`Module updated: ${path}`));
 commands.setOnDelete(path => console.log(`Module removed: ${path}`));
-commands.setOnReload((mod, err) => {
+commands.setOnReload((mod, file, err) => {
   if (err) console.error("Reload error:", err);
   else console.log(`Module loaded:`, mod);
 });
@@ -108,7 +108,7 @@ This ensures old intervals are cleared before reloading, avoiding duplicate time
 - `WatchFile<T>`
   - `constructor(filePath: string)`
   - `setOnChange(cb: (path: string) => void)`
-  - `setOnReload(cb: (mod: T | null, err?: Error) => void)`
+  - `setOnReload(cb: (mod: T | null, filePath: string, err?: Error) => void)`
   - `setOnDelete(cb: (path: string) => void)`
   - `cleanup(): Promise<void>`
 
@@ -117,7 +117,7 @@ This ensures old intervals are cleared before reloading, avoiding duplicate time
   - `setOnAdd(cb: (path: string) => void)`
   - `setOnChange(cb: (path: string) => void)`
   - `setOnDelete(cb: (path: string) => void)`
-  - `setOnReload(cb: (mod: T | null, err?: Error) => void)`
+  - `setOnReload(cb: (mod: T | null, filePath: string, err?: Error) => void)`
   - `cleanup(): Promise<void>`
 
 ## Contributing
