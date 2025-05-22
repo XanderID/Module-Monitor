@@ -1,4 +1,5 @@
 import chokidar, { FSWatcher } from "chokidar";
+import path from "path";
 import {
   reloadModule,
   handleModuleCleanup,
@@ -25,12 +26,18 @@ export class WatchFolder<T = any> {
   private onDeleteCb: ChangeCallback = () => {};
   private onReloadCb: (mod: T | null, err?: Error) => void = () => {};
   public modules: Map<string, T> = new Map();
+  private readonly folderPath: string;
 
   /**
    * Initialize watcher on the given folder path.
    * @param folderPath Path to directory to watch.
    */
-  constructor(private readonly folderPath: string) {
+  constructor(folderPath: string) {
+    const entryScript = process.argv[1] || process.cwd();
+    const baseDir = path.dirname(entryScript);
+    this.folderPath = path.isAbsolute(folderPath)
+      ? folderPath
+      : path.resolve(baseDir, folderPath);
     this.watcher = chokidar.watch(this.folderPath, { ignoreInitial: false });
     this.setupEvents();
   }
@@ -78,9 +85,6 @@ export class WatchFolder<T = any> {
     if (cbs.onReload) this.onReloadCb = cbs.onReload;
   }
 
-  /**
-   * Stop watching the folder and cleanup all loaded modules.
-   */
   public async cleanup(): Promise<void> {
     await this.watcher.close();
     for (const filePath of this.modules.keys()) {
@@ -90,28 +94,37 @@ export class WatchFolder<T = any> {
   }
 
   private setupEvents(): void {
-    this.watcher.on("add", path => this.handleAdd(path));
-    this.watcher.on("change", path => this.handleChange(path));
-    this.watcher.on("unlink", path => this.handleDelete(path));
+    this.watcher.on("add", (path) => this.handleAdd(path));
+    this.watcher.on("change", (path) => this.handleChange(path));
+    this.watcher.on("unlink", (path) => this.handleDelete(path));
   }
 
-  private async handleAdd(path: string): Promise<void> {
-    if (!isModuleFile(path)) return;
-    this.onAddCb(path);
-    await this.reloadAndStore(path);
+  private async handleAdd(pathStr: string): Promise<void> {
+    const filePath = path.isAbsolute(pathStr)
+      ? pathStr
+      : path.resolve(this.folderPath, pathStr);
+    if (!isModuleFile(filePath)) return;
+    this.onAddCb(filePath);
+    await this.reloadAndStore(filePath);
   }
 
-  private async handleChange(path: string): Promise<void> {
-    if (!isModuleFile(path)) return;
-    this.onChangeCb(path);
-    await this.reloadAndStore(path);
+  private async handleChange(pathStr: string): Promise<void> {
+    const filePath = path.isAbsolute(pathStr)
+      ? pathStr
+      : path.resolve(this.folderPath, pathStr);
+    if (!isModuleFile(filePath)) return;
+    this.onChangeCb(filePath);
+    await this.reloadAndStore(filePath);
   }
 
-  private handleDelete(path: string): void {
-    if (!isModuleFile(path)) return;
-    this.onDeleteCb(path);
-    handleModuleCleanup(path);
-    this.modules.delete(path);
+  private handleDelete(pathStr: string): void {
+    const filePath = path.isAbsolute(pathStr)
+      ? pathStr
+      : path.resolve(this.folderPath, pathStr);
+    if (!isModuleFile(filePath)) return;
+    this.onDeleteCb(filePath);
+    handleModuleCleanup(filePath);
+    this.modules.delete(filePath);
   }
 
   private async reloadAndStore(path: string): Promise<void> {

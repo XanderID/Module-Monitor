@@ -1,5 +1,6 @@
 import chokidar, { FSWatcher } from "chokidar";
 import { reloadModule, handleModuleCleanup } from "../utils/module";
+import path from "path";
 
 /**
  * Callback invoked when a module is reloaded.
@@ -25,6 +26,7 @@ export type DeleteCallback = (path: string) => void;
  * reloads the module, and invokes callbacks on events.
  */
 export class WatchFile<T = any> {
+  private absPath: string;
   private watcher: FSWatcher;
   private onReloadCb: ReloadCallback<T> = () => {};
   private onChangeCb: ChangeCallback = () => {};
@@ -34,15 +36,23 @@ export class WatchFile<T = any> {
    * Initialize watcher on the given file path.
    * @param filePath Path to file to watch.
    */
-  constructor(private readonly filePath: string) {
-    this.watcher = chokidar.watch(this.filePath, { ignoreInitial: true });
+  constructor(filePath: string) {
+    const entry = process.argv[1] || process.cwd();
+    const baseDir = path.dirname(entry);
+    this.absPath = path.isAbsolute(filePath)
+      ? filePath
+      : path.resolve(baseDir, filePath);
+
+    this.watcher = chokidar.watch(this.absPath, { ignoreInitial: true });
     this.watcher.on("change", (path) => {
+      this.cleanup();
       this.onChangeCb(path);
       this.handleReload();
     });
-    this.watcher.on("unlink", (path) => {
-      this.onDeleteCb(path);
+    this.watcher.on("unlink", async (path) => {
       this.cleanup();
+      this.onDeleteCb(path);
+      await this.watcher.close();
     });
   }
 
@@ -67,15 +77,11 @@ export class WatchFile<T = any> {
     this.onDeleteCb = cb;
   }
 
-  /**
-   * Stop watching and cleanup module.
-   */
-  public async cleanup(): Promise<void> {
-    await this.watcher.close();
-    handleModuleCleanup(this.filePath);
+  private async cleanup(): Promise<void> {
+    handleModuleCleanup(this.absPath);
   }
 
   private async handleReload(): Promise<T | null> {
-    return reloadModule<T>(this.filePath, this.onReloadCb);
+    return reloadModule<T>(this.absPath, this.onReloadCb);
   }
 }
