@@ -1,6 +1,6 @@
 {
   "name": "module-monitor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "description": "Modul-Monitor facilitates automatic reloading of modules in Node.js applications, ensuring real-time updates during development.",
   "keywords": [

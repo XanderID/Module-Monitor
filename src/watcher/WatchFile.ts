@@ -5,9 +5,10 @@ import path from "path";
 /**
  * Callback invoked when a module is reloaded.
  * @param module The new module instance or null if error occurred.
+ * @param filePath The path of File Module
  * @param error Optional error thrown during reload.
  */
-export type ReloadCallback<T = any> = (module: T | null, error?: Error) => void;
+export type ReloadCallback<T = any> = (module: T | null, filePath: string, error?: Error) => void;
 
 /**
  * Callback invoked on file change (before reload).

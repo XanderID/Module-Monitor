@@ -12,7 +12,7 @@ export type FolderCallbacks<T> = {
   onAdd?: ChangeCallback;
   onChange?: ChangeCallback;
   onDelete?: ChangeCallback;
-  onReload?: (mod: T | null, err?: Error) => void;
+  onReload?: (mod: T | null, filePath: string, err?: Error) => void;
 };
 
 /**
@@ -24,7 +24,7 @@ export class WatchFolder<T = any> {
   private onAddCb: ChangeCallback = () => {};
   private onChangeCb: ChangeCallback = () => {};
   private onDeleteCb: ChangeCallback = () => {};
-  private onReloadCb: (mod: T | null, err?: Error) => void = () => {};
+  private onReloadCb: (mod: T | null, filePath: string, err?: Error) => void = () => {};
   public modules: Map<string, T> = new Map();
   private readonly folderPath: string;
 
@@ -70,7 +70,7 @@ export class WatchFolder<T = any> {
    * Set callback for module reload events.
    * @param callback Function called with new module or null on error, and optional error.
    */
-  public setOnReload(callback: (mod: T | null, err?: Error) => void): void {
+  public setOnReload(callback: (mod: T | null, filePath: string, err?: Error) => void): void {
     this.onReloadCb = callback;
   }
 

@@ -14,7 +14,7 @@ export const activeModules: Map<string, any> = new Map();
  */
 export async function reloadModule<T = any>(
   filePath: string,
-  onReload: (mod: T | null, error?: Error) => void = () => {}
+  onReload: (mod: T | null, filePath: string, error?: Error) => void = () => {}
 ): Promise<T | null> {
   const absolutePath = path.isAbsolute(filePath)
     ? filePath
@@ -35,10 +35,10 @@ export async function reloadModule<T = any>(
     }
 
     activeModules.set(absolutePath, mod);
-    onReload(mod as T, undefined);
+    onReload(mod as T, filePath, undefined);
     return mod as T;
   } catch (err) {
-    onReload(null, err as Error);
+    onReload(null, filePath, err as Error);
     return null;
   }
 }
